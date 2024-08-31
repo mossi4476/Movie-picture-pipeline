@@ -78,7 +78,6 @@ jobs:
   
       - name: Run test
         run: npm run test
-   
 
   build:
     name: BUILD JOB
@@ -90,11 +89,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
+        
       - name: Docker Build
         run: |
-          docker build -t ${{env.IMAGE_REPO_NAME}}:latest
-          
-      - name: Run test
-        run: npm run test     
-    
+          docker build -t ${{env.IMAGE_REPO_NAME}}:latest .
