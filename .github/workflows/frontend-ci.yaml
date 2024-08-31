@@ -1,36 +1,52 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: Frontend Continuous Integration
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    # Triggers the workflow on push or pull request events but only for the "main" branch
+    push:
+      branches: [ "main" ]
+    pull_request:
+      branches: [ "main" ]
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+  # Environment
+  env:
+    
+    NODE_VERSION: 18.18.0
+    IMAGE_REPO_NAME: frontend
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+  # A workflow run is made up of one or more jobs that can run sequentially or in parallel
+  jobs:
+    lint:
+      name: LINT JOB
+      runs-on: ubuntu-latest
+      defaults:
+        run:
+          working-directory: ./starter/frontend
+      steps:
+        - name: Checkout code
+        - uses: actions/checkout@v3
+          uses: actions/checkout@v3
+  
+        - name: Setup NodeJS
+          uses: actions/setup-node@v3
+          with:
+            node-version: ${{env.NODE_VERSION}}
+  
+        - name: Perform a cache action to restore cache before dependency install
+          id: cache-npm
+          uses: actions/cache@v3
+          with:
+            path: ~/.npm
+            key: npm-cache-${{ hashFiles('**/package-lock.json') }}
+  
+        - name: Install dependencies
+          run: |
+             npm ci
+             npm install eslint --save-dev
+        - name: Run lint
+          run: |
+            npm run lint
+  
