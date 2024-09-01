@@ -1,95 +1,76 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Frontend Continuous Integration
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'starter/frontend/**'
+  workflow_dispatch:  # Allow manual triggering
   pull_request:
-    branches: [ "main" ]
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-# Environment
-env:
-  NODE_VERSION: 18.18.0
-  IMAGE_REPO_NAME: frontend
-  
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+    branches:
+      - main
+
 jobs:
-  lint:
-    name: LINT JOB
+  Linting:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./starter/frontend
+    environment: Development Environment
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Check the Repository
+      uses: actions/checkout@v3
 
-      - name: Setup NodeJS
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{env.NODE_VERSION}}
-          
-      - name: Perform a cache action to restore cache before dependency install
-        id: cache-npm
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: npm-cache-${{ hashFiles('**/package-lock.json') }}
-          
-      - name: Install dependencies
-        run: |
-           npm ci
-           npm install eslint --save-dev
+    - name: Use Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: starter/frontend/package-lock.json
 
-      - name: Run lint
-        run: |
-          npm run lint
-          
-  test:
-    name: TEST JOB
+    - name: Install Dependencies
+      working-directory: starter/frontend
+      run: npm ci
+
+    - name: Checkout Run Lint
+      run: cd starter/frontend && npm run lint
+
+  Test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./starter/frontend
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Setup NodeJS
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{env.NODE_VERSION}}
-      
-      - name: Perform a cache action to restore cache before dependency install
-        id: cache-npm-test
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: npm-cache-${{ hashFiles('**/package-lock.json') }}
+    - name: Check the Repository
+      uses: actions/checkout@v3
+
+    - name: Use Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: starter/frontend/package-lock.json
+    - name: Install Dependencies
+      working-directory: starter/frontend
+      run: npm ci
   
-      - name: Install dependencies
-        run: |
-          npm ci
-          npm install prettier --save-dev
-  
-      - name: Run test
-        run: npm run test
-
-  build:
-    name: BUILD JOB
-    needs: [lint, test]
+    - name: Test
+      run: cd starter/frontend && npm run test
+      
+  Build:
+    needs: [Linting, Test]
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./starter/frontend
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        
-      - name: Docker Build
-        run: |
-          docker build -t ${{env.IMAGE_REPO_NAME}}:latest .
+    - name: Check the Repository
+      uses: actions/checkout@v3
+    
+    - name: Use Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: starter/frontend/package-lock.json
+
+    - name: Build and Run Docker Image
+      run: |
+        cd starter/frontend
+        docker build --build-arg=REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag=mp-frontend:latest .
+        docker run --name mp-frontend -p 3000:3000 -d mp-frontend
